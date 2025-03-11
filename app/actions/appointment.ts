@@ -37,11 +37,14 @@ export async function createNewAppointment(data: any) {
 }
 export async function appointmentAction(
   id: string | number,
-
   status: AppointmentStatus,
   reason: string
 ) {
   try {
+    if (!id || !status || !reason) {
+      return { success: false, msg: "Invalid input parameters" };
+    }
+
     await db.appointment.update({
       where: { id: Number(id) },
       data: {

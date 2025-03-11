@@ -31,17 +31,18 @@ export function formatDateTime(isoDate: string): string {
   return date.toLocaleString("en-US", options);
 }
 
-export function calculateAge(dob: Date): string {
+export function calculateAge(dob: Date | string): string {
+  const dateOfBirth = new Date(dob);
   const today = new Date();
-  let years = today.getFullYear() - dob.getFullYear();
-  let months = today.getMonth() - dob.getMonth();
+  let years = today.getFullYear() - dateOfBirth.getFullYear();
+  let months = today.getMonth() - dateOfBirth.getMonth();
 
   if (months < 0) {
     years--;
     months += 12;
   }
 
-  if (months === 0 && today.getDate() < dob.getDate()) {
+  if (months === 0 && today.getDate() < dateOfBirth.getDate()) {
     years--;
     months = 11;
   }

@@ -4,7 +4,7 @@ import { ProfileImage } from "@/components/profile-image";
 import { Card } from "@/components/ui/card";
 import { getPatientFullDataById } from "@/utils/services/patient";
 import { auth } from "@clerk/nextjs/server";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import Link from "next/link";
 import React from "react";
 
@@ -68,7 +68,7 @@ const PatientProfile = async (props: ParamsProps) => {
               />
               <SmallCard
                 label="Date of Birth"
-                value={format(data?.date_of_birth!, "yyyy-MM-dd")}
+                value={isValid(new Date(data?.date_of_birth!)) ? format(new Date(data?.date_of_birth!), "yyyy-MM-dd") : "Invalid date"}
               />
               <SmallCard label={"Phone Number"} value={data?.phone!} />
             </div>
@@ -91,8 +91,8 @@ const PatientProfile = async (props: ParamsProps) => {
               <SmallCard
                 label="Last Visit"
                 value={
-                  data?.lastVisit
-                    ? format(data?.lastVisit!, "yyyy-MM-dd")
+                  data?.lastVisit && isValid(new Date(data?.lastVisit!))
+                    ? format(new Date(data?.lastVisit!), "yyyy-MM-dd")
                     : "No last visit"
                 }
               />

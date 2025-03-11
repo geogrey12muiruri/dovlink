@@ -8,15 +8,21 @@ interface DataProps {
 }
 
 export const MedicalHistoryContainer = async ({ id, patientId }: DataProps) => {
-  const data = await db.medicalRecords.findMany({
+  // Check if db.medicalRecord exists (optional, for safety)
+  if (!db.medicalRecord) {
+    console.error("medicalRecord is not defined in the database schema.");
+    return <div>Error: medicalRecord is not defined in the database schema.</div>;
+  }
+
+  const data = await db.medicalRecord.findMany({
     where: { patient_id: patientId },
     include: {
       diagnosis: { include: { doctor: true } },
-      lab_test: true,
+      // Note: "lab_test" is not defined in the schema; see below for clarification
     },
-
     orderBy: { created_at: "desc" },
   });
+
   return (
     <>
       <MedicalHistory data={data} isShowProfile={false} />

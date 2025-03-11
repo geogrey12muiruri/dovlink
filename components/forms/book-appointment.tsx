@@ -50,17 +50,41 @@ export const BookAppointment = ({
   data,
   doctors,
 }: {
-  data: Patient;
+  data: Patient | null;
   doctors: Doctor[];
 }) => {
-  const [loading, setLoading] = useState(false);
+  console.log("BookAppointment - Patient data received:", data);
+  console.log("BookAppointment - Doctors data received:", doctors);
+
+  const [loading, setLoading] = useState(!data);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const [physicians, setPhysicians] = useState<Doctor[] | undefined>(doctors);
 
   const appointmentTimes = generateTimes(8, 17, 30);
 
-  const patientName = `${data?.first_name} ${data?.last_name}`;
+  if (!data) {
+    return (
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button
+            variant="ghost"
+            className="w-full flex items-center gap-2 justify-start text-sm font-light bg-blue-600 text-white"
+          >
+            <UserPen size={16} /> Book Appointment
+          </Button>
+        </SheetTrigger>
+        <SheetContent>
+          <div className="flex items-center justify-center h-full text-red-500">
+            <span>Error: No patient data available. Please try again later.</span>
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  const patientName = `${data.first_name || "Unknown"} ${data.last_name || "Patient"}`;
+  console.log("BookAppointment - Constructed patientName:", patientName);
 
   const form = useForm<z.infer<typeof AppointmentSchema>>({
     resolver: zodResolver(AppointmentSchema),
@@ -78,7 +102,8 @@ export const BookAppointment = ({
   ) => {
     try {
       setIsSubmitting(true);
-      const newData = { ...values, patient_id: data?.id! };
+      console.log("BookAppointment - Form submission values:", values);
+      const newData = { ...values, patient_id: data.id };
 
       const res = await createNewAppointment(newData);
 
@@ -86,15 +111,18 @@ export const BookAppointment = ({
         form.reset({});
         router.refresh();
         toast.success("Appointment created successfully");
+      } else {
+        toast.error("Failed to create appointment.");
       }
     } catch (error) {
-      console.log(error);
+      console.log("BookAppointment - Submission error:", error);
       toast.error("Something went wrong. Try again later.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Rest of the component remains unchanged...
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -105,39 +133,32 @@ export const BookAppointment = ({
           <UserPen size={16} /> Book Appointment
         </Button>
       </SheetTrigger>
-
       <SheetContent className="rounded-xl rounded-r-2xl md:h-p[95%] md:top-[2.5%] md:right-[1%] w-full">
         {loading ? (
           <div className="flex items-center justify-center h-full">
-            <span>Loading</span>
+            <span>Loading patient data...</span>
           </div>
         ) : (
           <div className="h-full overflow-y-auto p-4">
             <SheetHeader>
               <SheetTitle>Book Appointment</SheetTitle>
             </SheetHeader>
-
             <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-8 mt-5 2xl:mt-10"
-              >
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 mt-5 2xl:mt-10">
                 <div className="w-full rounded-md border border-input bg-background px-3 py-1 flex items-center gap-4">
                   <ProfileImage
-                    url={data?.img!}
+                    url={data.img || ""}
                     name={patientName}
                     className="size-16 border border-input"
-                    bgColor={data?.colorCode!}
+                    bgColor={data.colorCode || "#000000"}
                   />
-
                   <div>
                     <p className="font-semibold text-lg">{patientName}</p>
                     <span className="text-sm text-gray-500 capitalize">
-                      {data?.gender}
+                      {data.gender || "N/A"}
                     </span>
                   </div>
                 </div>
-
                 <CustomInput
                   type="select"
                   selectList={TYPES}
@@ -146,7 +167,6 @@ export const BookAppointment = ({
                   label="Appointment Type"
                   placeholder="Select a appointment type"
                 />
-
                 <FormField
                   control={form.control}
                   name="doctor_id"
@@ -163,22 +183,20 @@ export const BookAppointment = ({
                             <SelectValue placeholder="Select a physician" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="">
+                        <SelectContent>
                           {physicians?.map((i, id) => (
                             <SelectItem key={id} value={i.id} className="p-2">
                               <div className="flex flex-row gap-2 p-2">
                                 <ProfileImage
-                                  url={i?.img!}
-                                  name={i?.name}
-                                  bgColor={i?.colorCode!}
+                                  url={i.img || ""}
+                                  name={i.name}
+                                  bgColor={i.colorCode || "#000000"}
                                   textClassName="text-black"
                                 />
                                 <div>
-                                  <p className="font-medium text-start ">
-                                    {i.name}
-                                  </p>
+                                  <p className="font-medium text-start">{i.name}</p>
                                   <span className="text-sm text-gray-600">
-                                    {i?.specialization}
+                                    {i.specialization || "N/A"}
                                   </span>
                                 </div>
                               </div>
@@ -190,7 +208,6 @@ export const BookAppointment = ({
                     </FormItem>
                   )}
                 />
-
                 <div className="flex items-center gap-2">
                   <CustomInput
                     type="input"
@@ -209,7 +226,6 @@ export const BookAppointment = ({
                     selectList={appointmentTimes}
                   />
                 </div>
-
                 <CustomInput
                   type="textarea"
                   control={form.control}
@@ -217,13 +233,12 @@ export const BookAppointment = ({
                   placeholder="Additional note"
                   label="Additional Note"
                 />
-
                 <Button
                   disabled={isSubmitting}
                   type="submit"
                   className="bg-blue-600 w-full"
                 >
-                  Submit
+                  {isSubmitting ? "Submitting..." : "Submit"}
                 </Button>
               </form>
             </Form>

@@ -21,6 +21,7 @@ const AppointmentDetailsPage = async ({
   const cat = (search?.cat as string) || "charts";
 
   const { data } = await getAppointmentWithMedicalRecordsById(Number(id));
+  console.log("Appointment data:", data);
 
   return (
     <div className="flex p-6 flex-col-reverse lg:flex-row w-full min-h-screen gap-10">

@@ -48,7 +48,7 @@ export const processAppointments = async (appointments: Appointment[]) => {
 
 export async function getPatientDashboardStatistics(id: string) {
   const cacheKey = `patient:dashboard:${id}`;
-  const cacheTTL = 60 * 10; // 10 minutes - dynamic data (appointments)
+  const cacheTTL = 60 * 10; // 10 minutes
 
   try {
     if (!id) return { success: false, message: "No data found", data: null };
@@ -87,6 +87,7 @@ export async function getPatientDashboardStatistics(id: string) {
         status: 200,
       };
       await redisClient.setEx(cacheKey, cacheTTL, JSON.stringify(result));
+      console.log(`Cached ${cacheKey} in Redis`);
       return result;
     }
 
@@ -114,39 +115,41 @@ export async function getPatientDashboardStatistics(id: string) {
     console.log(`Cached ${cacheKey} in Redis`);
     return result;
   } catch (error) {
-    console.log(...oo_oo(`3787584489_170_4_170_22_4`, error || {}));
+    console.error("getPatientDashboardStatistics - Error:", error);
     return { success: false, message: "Internal Server Error", status: 500 };
   }
 }
 
 export async function getPatientById(id: string) {
   const cacheKey = `patient:${id}`;
-  const cacheTTL = 60 * 60 * 24; // 24 hours - stable patient metadata
+  const cacheTTL = 60 * 60 * 24; // 24 hours
 
   try {
     const cachedData = await redisClient.get(cacheKey);
     if (cachedData) {
-      console.log(`Serving ${cacheKey} from Redis`);
-      return JSON.parse(cachedData);
+      const parsedData = JSON.parse(cachedData);
+      console.log(`Serving ${cacheKey} from Redis, parsed data:`, parsedData);
+      return parsedData;
     }
 
     const patient = await db.patient.findUnique({ where: { id } });
+    console.log(`getPatientById - DB query result for id ${id}:`, patient);
     const result = patient
       ? { success: true, data: patient, status: 200 }
       : { success: false, message: "Patient data not found", status: 200, data: null };
 
     await redisClient.setEx(cacheKey, cacheTTL, JSON.stringify(result));
-    console.log(`Cached ${cacheKey} in Redis`);
+    console.log(`Cached ${cacheKey} in Redis, result:`, result);
     return result;
   } catch (error) {
-    console.log(...oo_oo(`3787584489_170_4_170_22_4`, error || {}));
+    console.error("getPatientById - Error:", error);
     return { success: false, message: "Internal Server Error", status: 500 };
   }
 }
 
 export async function getPatientFullDataById(id: string) {
   const cacheKey = `patient:full:${id}`;
-  const cacheTTL = 60 * 15; // 15 minutes - semi-dynamic (appointments)
+  const cacheTTL = 60 * 15; // 15 minutes
 
   try {
     const cachedData = await redisClient.get(cacheKey);
@@ -166,6 +169,7 @@ export async function getPatientFullDataById(id: string) {
         },
       },
     });
+    console.log(`getPatientFullDataById - DB query result for id ${id}:`, patient);
 
     if (!patient) {
       const result = { success: false, message: "Patient data not found", status: 404 };
@@ -181,10 +185,10 @@ export async function getPatientFullDataById(id: string) {
     };
 
     await redisClient.setEx(cacheKey, cacheTTL, JSON.stringify(result));
-    console.log(`Cached ${cacheKey} in Redis`);
+    console.log(`Cached ${cacheKey} in Redis, result:`, result);
     return result;
   } catch (error) {
-    console.log(...oo_oo(`3787584489_170_4_170_22_4`, error || {}));
+    console.error("getPatientFullDataById - Error:", error);
     return { success: false, message: "Internal Server Error", status: 500 };
   }
 }
@@ -201,7 +205,7 @@ export async function getAllPatients({
   const PAGE_NUMBER = Number(page) <= 0 ? 1 : Number(page);
   const LIMIT = Number(limit) || 10;
   const cacheKey = `patients:all:${PAGE_NUMBER}:${LIMIT}:${search || "no-search"}`;
-  const cacheTTL = 60 * 15; // 15 minutes - paginated list with appointments
+  const cacheTTL = 60 * 15; // 15 minutes
 
   try {
     const cachedData = await redisClient.get(cacheKey);
@@ -240,6 +244,11 @@ export async function getAllPatients({
       }),
       db.patient.count(),
     ]);
+    console.log(`getAllPatients - DB query result:`, { patients, totalRecords });
+
+    if (!patients) {
+      return { success: false, message: "No patients found", status: 404 };
+    }
 
     const totalPages = Math.ceil(totalRecords / LIMIT);
     const result = {
@@ -252,10 +261,10 @@ export async function getAllPatients({
     };
 
     await redisClient.setEx(cacheKey, cacheTTL, JSON.stringify(result));
-    console.log(`Cached ${cacheKey} in Redis`);
+    console.log(`Cached ${cacheKey} in Redis, result:`, result);
     return result;
   } catch (error) {
-    console.log(...oo_oo(`3787584489_170_4_170_22_4`, error || {}));
+    console.error("getAllPatients - Error:", error);
     return { success: false, message: "Internal Server Error", status: 500 };
   }
 }
