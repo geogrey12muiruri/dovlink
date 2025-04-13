@@ -102,14 +102,6 @@ export const NewPatient = ({ data, type }: DataProps) => {
             | "widowed"
             | "separated",
           address: data.address,
-          emergency_contact_name: data.emergency_contact_name,
-          emergency_contact_number: data.emergency_contact_number,
-          relation: data.relation as
-            | "mother"
-            | "father"
-            | "husband"
-            | "wife"
-            | "other",
           blood_group: data?.blood_group!,
           allergies: data?.allergies! || "",
           medical_conditions: data?.medical_conditions! || "",

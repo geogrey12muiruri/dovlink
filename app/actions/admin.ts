@@ -39,11 +39,11 @@ export async function createNewStaff(data: any) {
 
     const client = await clerkClient();
 
-    const user = await client.users.createUser({
+        const user = await client.users.createUser({
       emailAddress: [validatedValues.email],
       password: validatedValues.password,
       firstName: validatedValues.name.split(" ")[0],
-      lastName: validatedValues.name.split(" ")[1],
+      lastName: validatedValues.name.split(" ")[1] || "",
       publicMetadata: { role: "doctor" },
     });
 
@@ -77,16 +77,16 @@ export async function createNewStaff(data: any) {
 
 export async function createNewDoctor(data: any) {
   try {
-    const values = DoctorSchema.safeParse(data);
+        const values = DoctorSchema.safeParse(data);
     const workingDaysValues = WorkingDaysSchema.safeParse(data?.work_schedule);
-
+    
     if (!values.success || !workingDaysValues.success) {
       return {
         success: false,
         errors: true,
         message: "Please provide all required info",
       };
-    }
+        }
 
     const validatedValues = values.data;
     const workingDayData = workingDaysValues.data!;

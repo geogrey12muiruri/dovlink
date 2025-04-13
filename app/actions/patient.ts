@@ -57,6 +57,7 @@ export async function createNewPatient(data: any, pid: string) {
     let patient_id = pid;
 
     const client = await clerkClient();
+
     if (pid === "new-patient") {
       const user = await client.users.createUser({
         emailAddress: [patientData.email],
@@ -73,16 +74,48 @@ export async function createNewPatient(data: any, pid: string) {
       });
     }
 
+    const {
+      emergency_contact_name,
+      emergency_contact_number,
+      relation,
+      blood_group,
+      allergies,
+      medical_conditions,
+      medical_history,
+      insurance_provider,
+      insurance_number,
+      ...patientDetails
+    } = patientData;
+
     await db.patient.create({
       data: {
-        ...patientData,
+        ...patientDetails,
         id: patient_id,
+        emergency_contacts: {
+          create: [
+            {
+              name: emergency_contact_name,
+              phone: emergency_contact_number,
+              relation: relation,
+            },
+          ],
+        },
+        medical_records: {
+          create: {
+            blood_group,
+            allergies,
+            medical_conditions,
+            medical_history,
+            insurance_provider,
+            insurance_number,
+          },
+        },
       },
     });
 
     return { success: true, error: false, msg: "Patient created successfully" };
   } catch (error: any) {
-    console.error(error);
+    console.error("Error creating patient:", error);
     return { success: false, error: true, msg: error?.message };
   }
 }
